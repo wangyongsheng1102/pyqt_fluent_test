@@ -1,0 +1,187 @@
+import sys
+from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex
+from PyQt5.QtGui import QColor, QCursor
+from PyQt5.QtWidgets import QApplication, QTableView, QVBoxLayout, QWidget, QStyledItemDelegate, QLabel
+from qfluentwidgets import FluentWindow, TabInterface, FluentIcon, TableView
+
+# 模拟首页表格的数据
+main_table_data = [
+    {"name": "用户 A", "id": "A001", "age": 25},
+    {"name": "用户 B", "id": "B002", "age": 30},
+    {"name": "用户 C", "id": "C003", "age": 22}
+]
+
+# 模拟点击链接后查询出的数据
+def get_user_data(user_id):
+    # 实际应是数据库或接口查询
+    return [
+        {"order": "O001", "amount": 120},
+        {"order": "O002", "amount": 300},
+    ] if user_id == "A001" else [
+        {"order": "O003", "amount": 450},
+    ]
+
+
+# 自定义模型
+class MainTableModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self.data_list = data
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.data_list)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 3  # name, id, age
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+
+        item = self.data_list[index.row()]
+        if role == Qt.DisplayRole:
+            if index.column() == 0:
+                return item["name"]
+            elif index.column() == 1:
+                return item["id"]
+            elif index.column() == 2:
+                return item["age"]
+
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        headers = ["姓名（点击查看）", "ID", "年龄"]
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return headers[section]
+        return None
+
+
+# 委托：让第一列内容变成类似超链接
+class HyperlinkDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        if index.column() == 0:
+            painter.save()
+            painter.setPen(QColor(0, 122, 204))
+            text = index.data()
+            painter.drawText(option.rect, Qt.AlignCenter, text)
+            painter.restore()
+        else:
+            super().paint(painter, option, index)
+
+
+class MainWindow(FluentWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("动态多 Tab 表格示例")
+        self.resize(1000, 600)
+
+        # 初始化 Tab 接口
+        self.tab = TabInterface(self)
+        self.setCentralWidget(self.tab)
+
+        # 存储已打开的 Tab 页
+        self.open_tabs = {}
+
+        # 添加首页 Tab
+        self.init_home_tab()
+
+    def init_home_tab(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        self.table = TableView()
+        self.model = MainTableModel(main_table_data)
+        self.table.setModel(self.model)
+
+        delegate = HyperlinkDelegate()
+        self.table.setItemDelegateForColumn(0, delegate)
+
+        # 鼠标悬停变手型
+        self.table.setMouseTracking(True)
+        self.table.entered.connect(self.on_hover)
+        self.table.viewport().setCursor(Qt.ArrowCursor)
+
+        self.table.clicked.connect(self.on_table_clicked)
+
+        layout.addWidget(self.table)
+        self.tab.addTab(page, FluentIcon.HOME, "首页")
+
+    def on_hover(self, index):
+        if index.column() == 0:
+            self.table.viewport().setCursor(Qt.PointingHandCursor)
+        else:
+            self.table.viewport().setCursor(Qt.ArrowCursor)
+
+    def on_table_clicked(self, index):
+        if index.column() == 0:
+            user_id = self.model.data(self.model.index(index.row(), 1), Qt.DisplayRole)
+            user_name = self.model.data(index, Qt.DisplayRole)
+            self.open_user_tab(user_id, user_name)
+
+    def open_user_tab(self, user_id, user_name):
+        if user_id in self.open_tabs:
+            self.tab.setCurrentIndex(self.tab.indexOf(self.open_tabs[user_id]))
+            return
+
+        # 查询数据
+        user_data = get_user_data(user_id)
+
+        # 创建内容页
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        table = TableView()
+        model = UserDetailTableModel(user_data)
+        table.setModel(model)
+        layout.addWidget(table)
+
+        # 添加到 Tab 页
+        self.tab.addTab(page, FluentIcon.ACCOUNT, f"{user_name} 详情")
+        self.tab.setCurrentWidget(page)
+
+        # 记录
+        self.open_tabs[user_id] = page
+
+        # 设置关闭事件
+        def on_tab_close(index):
+            if self.tab.widget(index) == page:
+                self.tab.removeTab(index)
+                del self.open_tabs[user_id]
+
+        self.tab.tabBar().tabCloseRequested.connect(on_tab_close)
+
+
+class UserDetailTableModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self.data_list = data
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.data_list)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 2  # order, amount
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        item = self.data_list[index.row()]
+        if role == Qt.DisplayRole:
+            if index.column() == 0:
+                return item["order"]
+            elif index.column() == 1:
+                return item["amount"]
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        headers = ["订单号", "金额"]
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return headers[section]
+        return None
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    w.show()
+    sys.exit(app.exec_())
