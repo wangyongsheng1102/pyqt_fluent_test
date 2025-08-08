@@ -1,0 +1,20 @@
+{
+    "API": {
+        "ID": "asd",
+        "Key": "gAAAAABolBZRLyoQKByR082cKooi_3xsWaSGBkTO9rLDJDt4d8njqlW-DCO0maellqGf_vtImpZCfnHyn4VrSD_eBztujx3Rsw==",
+        "Service": "Aliyun"
+    },
+    "MainWindow": {
+        "Language": "ja_JP"
+    },
+    "FIle": {
+        "Output": "C:/Users/Administrator/Desktop/streamlit_app_venv"
+    },
+    "QFluentWidgets": {
+        "ThemeColor": "#ff0078d4",
+        "ThemeMode": "Dark"
+    },
+    "Url": {
+        "Base": "http://localhost:8080/nexus/web/h2-dump"
+    }
+}
