@@ -15,6 +15,6 @@
         "ThemeMode": "Dark"
     },
     "Url": {
-        "Base": "http://localhost:8080/nexus/web/h2-dump"
+        "Base": "http://localhost:8080/xxxxx/web/h2-dump"
     }
 }
