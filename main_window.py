@@ -175,7 +175,7 @@ class Window(FramelessWindow):
     def initWindow(self):
         self.resize(600, 800)
         self.setWindowIcon(QIcon('resource/logo.ico'))
-        self.setWindowTitle('Biprogy-H2データベースツール-V1.0')
+        self.setWindowTitle('xxxxxxx-H2データベースツール-V1.0')
         self.titleBar.setAttribute(Qt.WA_StyledBackground)
 
         desktop = QApplication.desktop().availableGeometry()
